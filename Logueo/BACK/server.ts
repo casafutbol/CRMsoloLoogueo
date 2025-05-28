@@ -1,7 +1,14 @@
 import express from 'express';
-const app = express();
-const PORT = 3000;
+import cors from 'cors';
+import { accesoUser } from './CONTROLADORES/USERS/accesoUser';
 
-app.listen(PORT, '192.168.0.29', () => {
-  console.log(`Servidor escuchando en http://192.168.0.29:${PORT}`);
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+app.post('/acceso', accesoUser);
+
+app.listen(3000, () => {
+  console.log('Servidor escuchando en puerto 3000');
 });

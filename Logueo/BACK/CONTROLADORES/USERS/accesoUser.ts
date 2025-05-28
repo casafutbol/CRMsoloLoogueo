@@ -1,41 +1,35 @@
-import { Request, Response } from "express";
-import Jwt from "jsonwebtoken";
-import { execucionTodoBBDD } from "../../instruccions.base.sqlite";
-import { listaInstruccions } from "../../datos/lista.instruccions.bbdd.israel";
+import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-import { datoUser, datoUserEisUser,promesaEDatos } from "../../Tipos/bbdd.tipos";
-import { isUser,isUser2 } from "../../helpers";
-// debo decir que el retorno es asíncrono : Promise<void>
-export const accesoUser = async (req:Request,res:Response): Promise<void>=>{
-    // DESESTRUCTURACION CON TYPESCRIPT
-    //const { username } : {username : string} = req.body
-    const { username,pwd } = req.body
-    
-     try {
+dotenv.config();
 
-        const instanciaBBDD = execucionTodoBBDD()
-        const datoUserLido : datoUser = await instanciaBBDD.lerUnhaFila(listaInstruccions.instruccion.sqlLecturaUser,username);
-       
-        //let datoUserLido : promesaEDatos = instanciaBBDD.lerUnhaFila2(listaInstruccions.instruccion.sqlLecturaUser,username);
-       
-        
-        // Lemos o resultado na base de datos
-        const usuarioValido = isUser(req.body,datoUserLido)
-        //const usuarioValido = isUser2(req.body,datoUserLido)
-        console.log("usuarioValido ",usuarioValido)
-        if (!datoUserLido) {
-             console.log("dentro usuarioValido ",usuarioValido)
-             res.status(401).json({ mensaje: "Usuario o contraseña incorrectos" });
-        }
-           const token = Jwt.sign({ user: username }, process.env.SEGREDO || "clavePorDefecto");
-           console.log("token ",token)
-            res.send({ token:token });
-        
-    } catch (error) {
-        console.error("Error al firmar el token:", error);
-        res.status(500).send("Error interno del servidor");
-    } 
-      
+const JWT_SECRET = process.env.JWT_SECRET;
 
-
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET no está definido en el archivo .env");
 }
+
+// Ejemplo de usuarios simulados
+const usuarios = [
+  { id: 1, email: 'usuario@ejemplo.com', password: '1234' }
+];
+
+export const accesoUser = (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email y contraseña requeridos' });
+  }
+
+  const usuario = usuarios.find(u => u.email === email && u.password === password);
+  if (!usuario) {
+    return res.status(401).json({ error: 'Credenciales incorrectas' });
+  }
+
+  const token = jwt.sign({ id: usuario.id, email: usuario.email }, JWT_SECRET, {
+    expiresIn: '2h'
+  });
+
+  return res.json({ mensaje: 'Acceso autorizado', token });
+};
